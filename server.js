@@ -77,10 +77,9 @@ function createGameState(players) {
 // Build per-player view of state (hide opponent hands)
 function buildPlayerView(state, socketId, players) {
   const seat = players.findIndex(p => p.id === socketId);
-  const teammateSeat = seat % 2 === 0 ? seat + 1 : seat - 1; // 0↔1, 2↔3... wait teams are 0&1 vs 2&3
-  // Teams: seats 0,1 = Team A; seats 2,3 = Team B
-  const teamA = [0, 1];
-  const teamB = [2, 3];
+  // Teams: opposite seats — 0&2 = Team A, 1&3 = Team B
+  const teamA = [0, 2];
+  const teamB = [1, 3];
   const myTeam = teamA.includes(seat) ? teamA : teamB;
   const teammateSeatIdx = myTeam.find(s => s !== seat);
   const teammateId = players[teammateSeatIdx]?.id;
@@ -114,7 +113,7 @@ function buildPlayerView(state, socketId, players) {
     trickCount: state.trickCount,
     validCards,
     myId: socketId,
-    players: players.map((p, i) => ({ id: p.id, name: p.name, seat: i, team: teamA.includes(i) ? 'A' : 'B' })),
+    players: players.map((p, i) => ({ id: p.id, name: p.name, seat: i, team: [0,2].includes(i) ? 'A' : 'B' })),
     teammateId,
   };
 }
@@ -163,7 +162,7 @@ io.on('connection', (socket) => {
     io.to(roomCode).emit('playerJoined', {
       players: room.players.map((p, i) => ({
         id: p.id, name: p.name, seat: i,
-        team: [0,1].includes(i) ? 'A' : 'B'
+        team: [0,2].includes(i) ? 'A' : 'B'
       })),
       playerCount: room.players.length,
     });
