@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: 400uno-backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 3001
+    healthCheckPath: /health

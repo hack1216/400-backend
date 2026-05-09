@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>400 UNO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=Nunito+Sans:wght@400;700;900&display=swap" rel="stylesheet"/>
+
+<style>
+/* ═══════════════════════════════════════════════════
+   400 UNO — DESIGN SYSTEM
+═══════════════════════════════════════════════════ */
+:root {
+  --red:    #E8001C;
+  --red-light: #FF3352;
+  --green:  #12A12A;
+  --green-light: #1BC434;
+  --blue:   #0055B3;
+  --blue-light: #1A7AFF;
+  --yellow: #FFCC00;
+  --yellow-dark: #E6A800;
+  --white:  #FFFFFF;
+  --dark:   #1A1A2E;
+  --card-radius: 14px;
+  --table-bg: #076324;
+  --felt:   #0A7A2C;
+  --rim:    #054A1A;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #0D1117;
+  color: #fff;
+  min-height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; width: 100vw; height: 100vh; }
+.screen.active { display: flex; }
+
+/* ── LOBBY SCREEN ── */
+#lobby {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a2a1a 0%, #0D1117 70%);
+  gap: 0;
+}
+
+.logo-wrap {
+  position: relative;
+  margin-bottom: 32px;
+}
+
+.logo-title {
+  font-size: 72px;
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  background: linear-gradient(135deg, #FF3352, #FFCC00, #1BC434, #1A7AFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.logo-sub {
+  font-size: 18px;
+  color: #aaa;
+  text-align: center;
+  margin-top: 4px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.lobby-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  padding: 36px;
+  width: 420px;
+  max-width: 95vw;
+  backdrop-filter: blur(20px);
+}
+
+.lobby-card h2 {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #aaa;
+}
+
+.field input {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.3);
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  outline: none;
+  transition: border-color .2s;
+}
+
+.field input:focus { border-color: rgba(255,255,255,0.4); }
+.field input::placeholder { color: #555; }
+
+.btn {
+  padding: 14px 28px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .1s, opacity .2s;
+  width: 100%;
+  letter-spacing: .5px;
+}
+.btn:hover { opacity: .9; }
+.btn:active { transform: scale(.97); }
+
+.btn-primary { background: var(--red); color: #fff; }
+.btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-yellow { background: var(--yellow); color: #1a1a2e; }
+.btn-small {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.divider {
+  text-align: center;
+  color: #555;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 12px 0;
+  position: relative;
+}
+.divider::before, .divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 42%;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+
+.room-code-display {
+  background: rgba(255,204,0,0.15);
+  border: 2px solid var(--yellow);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.room-code-display .code {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: var(--yellow);
+}
+.room-code-display .label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #aaa;
+  margin-top: 2px;
+}
+
+.player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.player-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.player-slot .seat-badge {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.team-a .seat-badge { background: var(--red); }
+.team-b .seat-badge { background: var(--blue); }
+.player-slot .team-tag {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.team-a .team-tag { background: rgba(232,0,28,0.2); color: #FF3352; }
+.team-b .team-tag { background: rgba(0,85,179,0.2); color: #1A7AFF; }
+.player-slot.empty { opacity: 0.4; font-style: italic; }
+
+.msg { font-size: 13px; color: #aaa; text-align: center; margin-top: 8px; }
+.msg.error { color: #FF6B6B; }
+
+/* ── GAME SCREEN ── */
+#game {
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, #0A7A2C 0%, #054A1A 60%, #031A0A 100%);
+}
+
+/* Table felt */
+.table-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(540px, 90vw);
+  height: min(540px, 90vw);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, #0E8A30 0%, #076324 50%, #044716 100%);
+  border: 12px solid #032D0E;
+  box-shadow:
+    0 0 0 3px rgba(255,255,255,0.05),
+    inset 0 2px 20px rgba(0,0,0,0.3),
+    0 20px 80px rgba(0,0,0,0.5);
+}
+
+/* ── HUD BAR ── */
+.hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 100;
+}
+
+.hud-logo {
+  font-size: 22px;
+  font-weight: 900;
+  background: linear-gradient(90deg, #FF3352, #FFCC00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-right: 8px;
+}
+
+.hud-scores {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.score-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07);
+}
+
+.score-pill.is-me { border-color: var(--yellow); background: rgba(255,204,0,0.12); }
+.score-pill.is-teammate { border-color: rgba(255,255,255,0.3); }
+.score-pill .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+.score-pill.team-a .dot { background: var(--red); }
+.score-pill.team-b .dot { background: var(--blue-light); }
+
+.hud-trump {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #aaa;
+}
+
+.trump-card-mini {
+  width: 20px; height: 28px;
+  border-radius: 4px;
+  background: var(--red);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+}
+
+/* ── PLAYER ZONES ── */
+.player-zone {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Bottom = Me */
+.player-zone.bottom {
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Top = across */
+.player-zone.top {
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Left */
+.player-zone.left {
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Right */
+.player-zone.right {
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.5);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.player-info.is-current {
+  border-color: var(--yellow);
+  background: rgba(255,204,0,0.15);
+  animation: pulse-turn 1.5s infinite;
+}
+
+@keyframes pulse-turn {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,204,0,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(255,204,0,0); }
+}
+
+.player-info .pname { color: #fff; }
+.player-info .pbid { color: #FFCC00; }
+.player-info .ptricks { color: #1BC434; }
+
+/* ── HAND DISPLAY ── */
+.hand-row {
+  display: flex;
+  gap: -8px;
+  position: relative;
+}
+
+.hand-row.vertical {
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── UNO CARDS ── */
+.uno-card {
+  position: relative;
+  border-radius: var(--card-radius);
+  cursor: default;
+  transition: transform .15s, box-shadow .15s;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.uno-card.playable {
+  cursor: pointer;
+}
+
+.uno-card.playable:hover {
+  transform: translateY(-12px) scale(1.05);
+  z-index: 50;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+}
+
+.uno-card.playable:active {
+  transform: translateY(-8px) scale(1.02);
+}
+
+/* Card sizes */
+.card-lg { width: 68px; height: 100px; }
+.card-md { width: 54px; height: 80px; }
+.card-sm { width: 40px; height: 60px; }
+.card-xs { width: 32px; height: 48px; }
+
+/* Card backs */
+.card-back {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--card-radius);
+  background: linear-gradient(135deg, #1A1A4E, #2A2A6E);
+  border: 3px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.3);
+  font-style: italic;
+}
+
+/* Card face base */
+.card-face {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--card-radius);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255,255,255,0.3);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 8px rgba(0,0,0,0.3);
+}
+
+/* Suit colors */
+.suit-H .card-face { background: linear-gradient(145deg, #E8001C, #B00016); }
+.suit-D .card-face { background: linear-gradient(145deg, #12A12A, #0A7020); }
+.suit-C .card-face { background: linear-gradient(145deg, #0055B3, #003B80); }
+.suit-S .card-face { background: linear-gradient(145deg, #E6A800, #B38200); }
+
+/* Card oval (UNO style) */
+.card-face::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.2);
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+/* Corner labels */
+.card-corner {
+  position: absolute;
+  top: 4px; left: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.card-corner.bottom-right {
+  top: auto; left: auto;
+  bottom: 4px; right: 6px;
+  transform: rotate(180deg);
+}
+
+/* Center value */
+.card-center {
+  position: relative;
+  z-index: 2;
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  letter-spacing: -1px;
+}
+
+.card-lg .card-center { font-size: 28px; }
+.card-md .card-center { font-size: 22px; }
+.card-sm .card-center { font-size: 17px; }
+.card-xs .card-center { font-size: 13px; }
+
+.card-lg .card-corner { font-size: 13px; top: 5px; left: 7px; }
+.card-md .card-corner { font-size: 11px; }
+.card-sm .card-corner { font-size: 9px; top: 3px; left: 4px; }
+.card-xs .card-corner { font-size: 8px; top: 2px; left: 3px; }
+
+/* Face card icons */
+.icon-skip::after { content: '⊘'; }
+.icon-draw2::after { content: '+2'; }
+.icon-reverse::after { content: '↺'; }
+
+/* Highlight for valid play */
+.uno-card.playable {
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.6), 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* Not-playable dimming */
+.uno-card.not-playable {
+  opacity: 0.55;
+  filter: saturate(0.5);
+}
+
+/* ── TRICK CENTER ── */
+.trick-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.trick-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.trick-slot .tname {
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* ── PHASE OVERLAYS ── */
+.phase-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+}
+
+.phase-panel {
+  background: rgba(10,20,10,0.95);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 24px;
+  padding: 36px;
+  width: 380px;
+  max-width: 95vw;
+  text-align: center;
+}
+
+.phase-panel h2 {
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.phase-panel .sub {
+  color: #aaa;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+/* Bidding */
+.bid-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.bid-btn {
+  padding: 14px 8px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  font-family: 'Nunito', sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+}
+
+.bid-btn[data-bid="2"]  { background: #E8001C; color: #fff; }
+.bid-btn[data-bid="3"]  { background: #12A12A; color: #fff; }
+.bid-btn[data-bid="4"]  { background: #0055B3; color: #fff; }
+.bid-btn[data-bid="10"] { background: #E6A800; color: #1a1a2e; }
+.bid-btn[data-bid="12"] { background: #fff; color: #1a1a2e; }
+
+.bid-btn:hover { transform: scale(1.08); box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+.bid-btn:active { transform: scale(1.02); }
+.bid-btn.selected { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,0.4); }
+
+.bid-info-small {
+  font-size: 10px;
+  display: block;
+  margin-top: 2px;
+  opacity: 0.75;
+}
+
+.bid-wait-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bid-wait-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.bid-wait-row .status { color: #1BC434; font-size: 18px; }
+.bid-wait-row .waiting { color: #aaa; font-size: 13px; }
+
+/* Round End */
+.round-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.round-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.round-row .rscore { font-size: 18px; font-weight: 900; }
+.round-row .rscore.pos { color: #1BC434; }
+.round-row .rscore.neg { color: var(--red); }
+.round-row .rtotal { color: #FFCC00; font-size: 13px; }
+
+/* ── TRICK WIN FLASH ── */
+.trick-flash {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 300;
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--yellow);
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  opacity: 0;
+  transition: opacity .3s;
+  white-space: nowrap;
+  background: rgba(0,0,0,0.7);
+  padding: 12px 24px;
+  border-radius: 20px;
+  border: 2px solid var(--yellow);
+}
+
+.trick-flash.show {
+  opacity: 1;
+  animation: flashPop .8s forwards;
+}
+
+@keyframes flashPop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -60%) scale(0.95); }
+}
+
+/* ── CARD PLAY ANIMATION ── */
+@keyframes cardPlay {
+  0% { transform: scale(1.2) translateY(-10px); opacity: 0.5; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.card-played { animation: cardPlay .25s ease-out; }
+
+/* ── NOTIFICATION ── */
+.notif {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.85);
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  z-index: 500;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.notif.show { opacity: 1; }
+
+/* ── TURN INDICATOR ── */
+.turn-label {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,204,0,0.2);
+  border: 1px solid var(--yellow);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--yellow);
+  z-index: 50;
+  white-space: nowrap;
+}
+
+/* ── RESPONSIVE HAND (bottom) ── */
+.my-hand-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  padding: 8px 12px 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 110px;
+}
+
+.my-hand-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.my-hand-row .uno-card {
+  margin: 0 1px;
+}
+
+/* Overlap trick */
+.hand-overlap {
+  display: flex;
+  position: relative;
+}
+
+.hand-overlap .uno-card {
+  margin-left: -18px;
+}
+
+.hand-overlap .uno-card:first-child {
+  margin-left: 0;
+}
+
+/* ── SIDE HANDS ── */
+.side-hand {
+  display: flex;
+  flex-direction: column;
+  gap: -12px;
+}
+
+.side-hand .uno-card {
+  margin-top: -20px;
+}
+
+.side-hand .uno-card:first-child {
+  margin-top: 0;
+}
+
+/* ── SCORE BADGE ── */
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  border-radius: 11px;
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 900;
+}
+.score-badge.pos { background: rgba(27,196,52,0.2); color: #1BC434; }
+.score-badge.neg { background: rgba(232,0,28,0.2); color: #FF3352; }
+
+/* ── WAITING ROOM OVERLAY ── */
+#waitingOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(10px);
+}
+
+.waiting-panel {
+  text-align: center;
+}
+
+.waiting-panel h2 {
+  font-size: 32px;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.waiting-panel .room-code-big {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 12px;
+  color: var(--yellow);
+  margin: 16px 0;
+}
+
+.waiting-dots { color: #aaa; }
+.dots-anim::after {
+  content: '...';
+  animation: dots 1.5s infinite;
+}
+@keyframes dots {
+  0% { content: '.'; }
+  33% { content: '..'; }
+  66% { content: '...'; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════ LOBBY SCREEN ═══════ -->
+<div id="lobby" class="screen active">
+  <div class="logo-wrap">
+    <div class="logo-title">400 UNO</div>
+    <div class="logo-sub">Trick-Taking Card Game</div>
+  </div>
+
+  <div class="lobby-card" id="lobbyCard">
+    <h2>Join or Create a Game</h2>
+
+    <div class="field">
+      <label>Your Name</label>
+      <input type="text" id="playerName" placeholder="Enter your name" maxlength="16"/>
+    </div>
+
+    <button class="btn btn-primary" onclick="createRoom()">🃏 Create New Room</button>
+
+    <div class="divider">or</div>
+
+    <div class="field">
+      <label>Room Code</label>
+      <input type="text" id="joinCode" placeholder="Enter 5-letter code" maxlength="5" style="text-transform:uppercase"/>
+    </div>
+    <button class="btn btn-secondary" onclick="joinRoom()">→ Join Room</button>
+
+    <p class="msg" id="lobbyMsg"></p>
+  </div>
+</div>
+
+<!-- ═══════ WAITING ROOM ═══════ -->
+<div id="waitRoom" class="screen" style="flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1a2a1a,#0D1117)">
+  <div class="logo-title" style="font-size:48px;margin-bottom:24px;background:linear-gradient(135deg,#FF3352,#FFCC00,#1BC434,#1A7AFF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">400 UNO</div>
+
+  <div class="lobby-card">
+    <h2 style="text-align:center">Waiting for Players</h2>
+    <div class="room-code-display">
+      <div class="label">Room Code</div>
+      <div class="code" id="waitCode">-----</div>
+      <div class="label">Share this code with your friends</div>
+    </div>
+
+    <div class="player-list" id="waitPlayerList">
+      <div class="player-slot empty"><span class="seat-badge team-a" style="background:var(--red)">1</span> Waiting... <span class="team-tag" style="background:rgba(232,0,28,0.2);color:#FF3352">Team A</span></div>
+      <div class="player-slot empty"><span class="seat-badge team-a" style="background:var(--red)">2</span> Waiting... <span class="team-tag" style="background:rgba(232,0,28,0.2);color:#FF3352">Team A</span></div>
+      <div class="player-slot empty"><span class="seat-badge team-b" style="background:var(--blue)">3</span> Waiting... <span class="team-tag" style="background:rgba(0,85,179,0.2);color:#1A7AFF">Team B</span></div>
+      <div class="player-slot empty"><span class="seat-badge team-b" style="background:var(--blue)">4</span> Waiting... <span class="team-tag" style="background:rgba(0,85,179,0.2);color:#1A7AFF">Team B</span></div>
+    </div>
+
+    <button class="btn btn-green" id="startBtn" style="display:none" onclick="startGame()">▶ Start Game</button>
+    <p class="msg" id="waitMsg">Waiting for 4 players <span class="dots-anim"></span></p>
+  </div>
+</div>
+
+<!-- ═══════ GAME SCREEN ═══════ -->
+<div id="game" class="screen">
+  <div class="game-bg"></div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-logo">400</div>
+    <div class="hud-scores" id="hudScores"></div>
+    <div class="hud-trump">
+      <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#666">TRUMP</span>
+      <div class="trump-card-mini">♥</div>
+      <span style="color:#FF3352;font-weight:900">Hearts</span>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-ring" id="tableRing">
+    <!-- Trick center -->
+    <div class="trick-center" id="trickCenter"></div>
+  </div>
+
+  <!-- Player zones (positioned absolute) -->
+  <div class="player-zone top" id="zoneTop"></div>
+  <div class="player-zone left" id="zoneLeft"></div>
+  <div class="player-zone right" id="zoneRight"></div>
+
+  <!-- Turn label -->
+  <div class="turn-label" id="turnLabel" style="display:none"></div>
+
+  <!-- My hand -->
+  <div class="my-hand-wrap">
+    <div class="hand-overlap" id="myHand"></div>
+  </div>
+
+  <!-- Trick flash -->
+  <div class="trick-flash" id="trickFlash"></div>
+
+  <!-- Bidding overlay -->
+  <div class="phase-overlay" id="biddingOverlay" style="display:none">
+    <div class="phase-panel">
+      <h2>💰 Place Your Bid</h2>
+      <p class="sub">Choose how many tricks you aim to win</p>
+
+      <div class="bid-grid" id="bidGrid">
+        <button class="bid-btn" data-bid="2" onclick="placeBid(2)">2<span class="bid-info-small">2 tricks</span></button>
+        <button class="bid-btn" data-bid="3" onclick="placeBid(3)">3<span class="bid-info-small">3 tricks</span></button>
+        <button class="bid-btn" data-bid="4" onclick="placeBid(4)">4<span class="bid-info-small">4 tricks</span></button>
+        <button class="bid-btn" data-bid="10" onclick="placeBid(10)">10<span class="bid-info-small">5 tricks</span></button>
+        <button class="bid-btn" data-bid="12" onclick="placeBid(12)">12<span class="bid-info-small">6 tricks</span></button>
+      </div>
+
+      <div style="background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.3);border-radius:10px;padding:10px 14px;font-size:12px;color:#FFCC00;margin-bottom:16px;text-align:left">
+        ♥ <strong>Hearts are always trump.</strong> Meet or exceed your required tricks to score!
+      </div>
+
+      <div class="bid-wait-list" id="bidWaitList"></div>
+    </div>
+  </div>
+
+  <!-- Round End overlay -->
+  <div class="phase-overlay" id="roundEndOverlay" style="display:none">
+    <div class="phase-panel">
+      <h2>🏆 Round Over!</h2>
+      <p class="sub">Here are this round's results</p>
+      <div class="round-scores" id="roundScores"></div>
+      <button class="btn btn-primary" id="newRoundBtn" onclick="newRound()" style="display:none">▶ Next Round</button>
+      <p class="msg" id="roundMsg"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Notification toast -->
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG — Change BACKEND_URL after deploying to Render
+// ═══════════════════════════════════════════════════════
+const BACKEND_URL = window.BACKEND_URL || 'http://localhost:3001';
+
+// ─── STATE ───────────────────────────────────────────────────
+let socket = null;
+let myId = null;
+let roomCode = null;
+let gameState = null;
+let myName = '';
+let myBid = null;
+let isSeat0 = false; // seat 0 can start game
+
+// ─── CARD DISPLAY HELPERS ────────────────────────────────────
+const RANK_DISPLAY = {
+  14: 'A', 13: 'K', 12: 'Q', 11: 'J',
+  10: '10', 9: '9', 8: '8', 7: '7',
+  6: '6', 5: '5', 4: '4', 3: '3', 2: '2'
+};
+
+const CENTER_LABEL = {
+  14: '1',   // Ace = 1 in UNO
+  13: '⊘',   // King = skip
+  12: '+2',  // Queen = +2
+  11: '↺',   // Jack = reverse
+};
+
+const SUIT_CLASS = { H: 'suit-H', D: 'suit-D', C: 'suit-C', S: 'suit-S' };
+
+const CORNER_LABEL_BY_SUIT = {
+  H: 'H', D: 'D', C: 'C', S: 'S'
+};
+
+function makeCardEl(card, size = 'card-md', playable = false, notPlayable = false) {
+  const div = document.createElement('div');
+  div.className = `uno-card ${SUIT_CLASS[card.suit]} ${size}`;
+  if (playable) div.classList.add('playable');
+  if (notPlayable) div.classList.add('not-playable');
+
+  const rankDisp = RANK_DISPLAY[card.rank];
+  const center = CENTER_LABEL[card.rank] || rankDisp;
+  const cornerSuit = CORNER_LABEL_BY_SUIT[card.suit];
+
+  div.innerHTML = `
+    <div class="card-face">
+      <div class="card-corner">${rankDisp}<br><span style="font-size:0.8em">${cornerSuit}</span></div>
+      <div class="card-corner bottom-right">${rankDisp}<br><span style="font-size:0.8em">${cornerSuit}</span></div>
+      <div class="card-center">${center}</div>
+    </div>
+  `;
+
+  if (playable) {
+    const cid = card.rank + card.suit;
+    div.onclick = () => playCard(cid);
+  }
+
+  return div;
+}
+
+function makeBackEl(size = 'card-md') {
+  const div = document.createElement('div');
+  div.className = `uno-card ${size}`;
+  div.innerHTML = `<div class="card-back">🃏</div>`;
+  return div;
+}
+
+// ─── SOCKET INIT ─────────────────────────────────────────────
+function initSocket() {
+  socket = io(BACKEND_URL, { transports: ['websocket', 'polling'] });
+
+  socket.on('connect', () => {
+    myId = socket.id;
+    console.log('Connected:', myId);
+  });
+
+  socket.on('playerJoined', (data) => {
+    updateWaitingRoom(data.players);
+    if (data.playerCount === 4) {
+      document.getElementById('waitMsg').textContent = '4 players ready!';
+      if (isSeat0) document.getElementById('startBtn').style.display = 'block';
+    }
+  });
+
+  socket.on('gameState', (state) => {
+    gameState = state;
+    myId = state.myId;
+    renderGame(state);
+  });
+
+  socket.on('trickComplete', (data) => {
+    showTrickFlash(data.winnerName + ' wins the trick! 🎉');
+  });
+
+  socket.on('playerLeft', (data) => {
+    showNotif('⚠️ A player disconnected');
+  });
+
+  socket.on('disconnect', () => {
+    showNotif('Connection lost. Refresh to reconnect.');
+  });
+}
+
+// ─── LOBBY ACTIONS ───────────────────────────────────────────
+async function createRoom() {
+  const name = document.getElementById('playerName').value.trim();
+  if (!name) return setLobbyMsg('Please enter your name', true);
+
+  myName = name;
+  if (!socket) initSocket();
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/create-room`, { method: 'POST' });
+    const data = await res.json();
+    roomCode = data.code;
+
+    socket.emit('joinRoom', { roomCode, playerName: name }, (resp) => {
+      if (resp?.error) return setLobbyMsg(resp.error, true);
+      isSeat0 = resp.seat === 0;
+      showWaitingRoom();
+    });
+  } catch (e) {
+    setLobbyMsg('Cannot connect to server. Check backend URL.', true);
+  }
+}
+
+function joinRoom() {
+  const name = document.getElementById('playerName').value.trim();
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (!name) return setLobbyMsg('Please enter your name', true);
+  if (!code || code.length < 4) return setLobbyMsg('Enter a valid room code', true);
+
+  myName = name;
+  roomCode = code;
+  if (!socket) initSocket();
+
+  socket.emit('joinRoom', { roomCode, playerName: name }, (resp) => {
+    if (resp?.error) return setLobbyMsg(resp.error, true);
+    isSeat0 = resp.seat === 0;
+    showWaitingRoom();
+  });
+}
+
+function startGame() {
+  socket.emit('startGame', { roomCode }, (resp) => {
+    if (resp?.error) showNotif(resp.error);
+  });
+}
+
+function placeBid(bid) {
+  if (myBid !== null) return;
+  myBid = bid;
+
+  document.querySelectorAll('.bid-btn').forEach(b => {
+    b.disabled = true;
+    if (parseInt(b.dataset.bid) === bid) b.classList.add('selected');
+    else b.style.opacity = '0.4';
+  });
+
+  socket.emit('placeBid', { roomCode, bid }, (resp) => {
+    if (resp?.error) {
+      showNotif(resp.error);
+      myBid = null;
+      document.querySelectorAll('.bid-btn').forEach(b => {
+        b.disabled = false;
+        b.style.opacity = '';
+        b.classList.remove('selected');
+      });
+    }
+  });
+}
+
+function playCard(cardStr) {
+  socket.emit('playCard', { roomCode, cardStr }, (resp) => {
+    if (resp?.error) showNotif(resp.error);
+  });
+}
+
+function newRound() {
+  myBid = null;
+  socket.emit('newRound', { roomCode }, (resp) => {
+    if (resp?.error) showNotif(resp.error);
+  });
+}
+
+// ─── SCREEN TRANSITIONS ──────────────────────────────────────
+function showWaitingRoom() {
+  document.getElementById('lobby').classList.remove('active');
+  document.getElementById('waitRoom').classList.add('active');
+  document.getElementById('waitCode').textContent = roomCode;
+}
+
+function showGame() {
+  document.getElementById('waitRoom').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+}
+
+// ─── WAITING ROOM UPDATE ─────────────────────────────────────
+function updateWaitingRoom(players) {
+  const list = document.getElementById('waitPlayerList');
+  list.innerHTML = '';
+
+  const slots = [
+    { seat: 0, team: 'A', color: 'var(--red)' },
+    { seat: 1, team: 'A', color: 'var(--red)' },
+    { seat: 2, team: 'B', color: 'var(--blue)' },
+    { seat: 3, team: 'B', color: 'var(--blue)' },
+  ];
+
+  slots.forEach(slot => {
+    const p = players.find(p => p.seat === slot.seat);
+    const div = document.createElement('div');
+    div.className = `player-slot team-${slot.team.toLowerCase()} ${p ? '' : 'empty'}`;
+    const isMe = p && p.id === socket.id;
+    div.innerHTML = `
+      <span class="seat-badge" style="background:${slot.color}">${slot.seat + 1}</span>
+      <span>${p ? (isMe ? '⭐ ' + p.name + ' (You)' : p.name) : 'Waiting...'}</span>
+      <span class="team-tag">Team ${slot.team}</span>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ─── GAME RENDER ─────────────────────────────────────────────
+function renderGame(state) {
+  showGame();
+
+  // Update HUD
+  renderHUD(state);
+
+  // Player zones
+  renderPlayerZones(state);
+
+  // Trick center
+  renderTrickCenter(state);
+
+  // My hand
+  renderMyHand(state);
+
+  // Turn label
+  const turnEl = document.getElementById('turnLabel');
+  if (state.phase === 'playing') {
+    const me = state.currentPlayer === myId;
+    turnEl.style.display = 'block';
+    const cp = state.players.find(p => p.id === state.currentPlayer);
+    turnEl.textContent = me ? '⭐ Your turn!' : `${cp?.name || '...'}'s turn`;
+    turnEl.style.color = me ? 'var(--yellow)' : '#aaa';
+    turnEl.style.borderColor = me ? 'var(--yellow)' : 'rgba(255,255,255,0.2)';
+  } else {
+    turnEl.style.display = 'none';
+  }
+
+  // Phase overlays
+  renderPhaseOverlays(state);
+}
+
+function renderHUD(state) {
+  const el = document.getElementById('hudScores');
+  el.innerHTML = '';
+  state.players.forEach(p => {
+    const pill = document.createElement('div');
+    pill.className = `score-pill team-${p.team.toLowerCase()}`;
+    if (p.id === myId) pill.classList.add('is-me');
+    if (p.id === state.teammateId) pill.classList.add('is-teammate');
+
+    const score = state.totalScores[p.id] || 0;
+    const tricks = state.tricksWon[p.id] || 0;
+    const bid = state.bids[p.id];
+
+    pill.innerHTML = `
+      <div class="dot"></div>
+      <span>${p.id === myId ? '⭐ ' : ''}${p.name}</span>
+      ${bid !== null ? `<span style="color:var(--yellow);font-size:10px">bid:${bid}</span>` : ''}
+      <span style="color:#1BC434;font-size:10px">🃏${tricks}</span>
+      <span class="score-badge ${score >= 0 ? 'pos' : 'neg'}">${score >= 0 ? '+' : ''}${score}</span>
+    `;
+    el.appendChild(pill);
+  });
+}
+
+function getMyPosition(state) {
+  // Returns seat positions relative to me
+  // me = bottom, next clockwise = right, across = top, prev clockwise = left
+  const mySeat = state.players.findIndex(p => p.id === myId);
+  const seats = [0, 1, 2, 3];
+  const order = seats.map(s => (s - mySeat + 4) % 4);
+  // 0=me, 1=right, 2=top, 3=left
+  const byRelative = {};
+  state.players.forEach((p, i) => {
+    const rel = (i - mySeat + 4) % 4;
+    byRelative[rel] = p;
+  });
+  return byRelative;
+}
+
+function renderPlayerZones(state) {
+  const rel = getMyPosition(state);
+
+  const positions = {
+    1: 'zoneRight',
+    2: 'zoneTop',
+    3: 'zoneLeft',
+  };
+
+  Object.entries(positions).forEach(([relIdx, zoneId]) => {
+    const zone = document.getElementById(zoneId);
+    zone.innerHTML = '';
+    const p = rel[parseInt(relIdx)];
+    if (!p) return;
+
+    const isTeammate = p.id === state.teammateId;
+    const isCurrent = state.currentPlayer === p.id && state.phase === 'playing';
+    const hand = state.hands[p.id] || [];
+    const bid = state.bids[p.id];
+    const tricks = state.tricksWon[p.id] || 0;
+
+    // Player info
+    const info = document.createElement('div');
+    info.className = `player-info ${isCurrent ? 'is-current' : ''}`;
+    info.innerHTML = `
+      <span class="pname">${isTeammate ? '🤝 ' : ''}${p.name}</span>
+      ${bid !== null ? `<span class="pbid">bid:${bid}</span>` : ''}
+      <span class="ptricks">🃏${tricks}</span>
+    `;
+    zone.appendChild(info);
+
+    // Hand (teammate visible, opponents hidden)
+    if (hand.length > 0) {
+      const handEl = document.createElement('div');
+
+      if (parseInt(relIdx) === 2) {
+        // Top — horizontal
+        handEl.className = 'hand-overlap';
+        hand.forEach(c => {
+          const el = c.hidden ? makeBackEl('card-xs') : makeCardEl(c, 'card-xs');
+          handEl.appendChild(el);
+        });
+      } else {
+        // Side — vertical
+        handEl.className = 'side-hand';
+        hand.forEach(c => {
+          const el = c.hidden ? makeBackEl('card-xs') : makeCardEl(c, 'card-xs');
+          handEl.appendChild(el);
+        });
+      }
+      zone.appendChild(handEl);
+    }
+  });
+}
+
+function renderTrickCenter(state) {
+  const center = document.getElementById('trickCenter');
+  center.innerHTML = '';
+
+  if (state.currentTrick.length === 0) return;
+
+  state.currentTrick.forEach(({ playerId, card }) => {
+    const p = state.players.find(p => p.id === playerId);
+    const slot = document.createElement('div');
+    slot.className = 'trick-slot';
+    slot.innerHTML = `<div class="tname">${p?.name || '?'}</div>`;
+    const cardEl = makeCardEl(card, 'card-sm');
+    cardEl.classList.add('card-played');
+    slot.appendChild(cardEl);
+    center.appendChild(slot);
+  });
+}
+
+function renderMyHand(state) {
+  const hand = document.getElementById('myHand');
+  hand.innerHTML = '';
+
+  const myHand = state.hands[myId] || [];
+  const validCards = new Set(state.validCards || []);
+  const isMyTurn = state.currentPlayer === myId && state.phase === 'playing';
+
+  myHand.forEach(c => {
+    const cid = c.rank + c.suit;
+    const isPlayable = isMyTurn && validCards.has(cid);
+    const isNotPlayable = isMyTurn && !validCards.has(cid);
+    const el = makeCardEl(c, 'card-lg', isPlayable, isNotPlayable);
+    hand.appendChild(el);
+  });
+}
+
+function renderPhaseOverlays(state) {
+  const biddingOverlay = document.getElementById('biddingOverlay');
+  const roundEndOverlay = document.getElementById('roundEndOverlay');
+
+  if (state.phase === 'bidding') {
+    biddingOverlay.style.display = 'flex';
+    roundEndOverlay.style.display = 'none';
+    renderBiddingOverlay(state);
+  } else if (state.phase === 'roundEnd') {
+    biddingOverlay.style.display = 'none';
+    roundEndOverlay.style.display = 'flex';
+    renderRoundEnd(state);
+  } else {
+    biddingOverlay.style.display = 'none';
+    roundEndOverlay.style.display = 'none';
+  }
+}
+
+function renderBiddingOverlay(state) {
+  const me = state.players.find(p => p.id === myId);
+  const alreadyBid = state.bids[myId] !== null;
+
+  const bidGrid = document.getElementById('bidGrid');
+  if (alreadyBid) {
+    bidGrid.style.opacity = '0.5';
+    bidGrid.style.pointerEvents = 'none';
+  } else {
+    bidGrid.style.opacity = '1';
+    bidGrid.style.pointerEvents = '';
+  }
+
+  // Wait list
+  const waitList = document.getElementById('bidWaitList');
+  waitList.innerHTML = '';
+  state.players.forEach(p => {
+    const hasBid = state.bids[p.id] !== null;
+    const row = document.createElement('div');
+    row.className = 'bid-wait-row';
+    row.innerHTML = `
+      <span>${p.id === myId ? '⭐ ' : ''}${p.name}</span>
+      ${hasBid
+        ? `<span class="status">✓ ${state.bids[p.id]}</span>`
+        : `<span class="waiting">Thinking<span class="dots-anim"></span></span>`
+      }
+    `;
+    waitList.appendChild(row);
+  });
+}
+
+function renderRoundEnd(state) {
+  const scoreList = document.getElementById('roundScores');
+  scoreList.innerHTML = '';
+
+  state.players.forEach(p => {
+    const rs = state.roundScores[p.id] || 0;
+    const total = state.totalScores[p.id] || 0;
+    const bid = state.bids[p.id];
+    const tricks = state.tricksWon[p.id] || 0;
+
+    const row = document.createElement('div');
+    row.className = 'round-row';
+    const req = { 2:2, 3:3, 4:4, 10:5, 12:6 }[bid] || bid;
+    row.innerHTML = `
+      <div>
+        <div>${p.id === myId ? '⭐ ' : ''}${p.name}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">bid ${bid} (need ${req}) · got ${tricks}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="rscore ${rs >= 0 ? 'pos' : 'neg'}">${rs >= 0 ? '+' : ''}${rs}</div>
+        <div class="rtotal">Total: ${total >= 0 ? '+' : ''}${total}</div>
+      </div>
+    `;
+    scoreList.appendChild(row);
+  });
+
+  const newRoundBtn = document.getElementById('newRoundBtn');
+  const roundMsg = document.getElementById('roundMsg');
+  if (myId === state.players[0]?.id) {
+    newRoundBtn.style.display = 'block';
+    roundMsg.textContent = '';
+  } else {
+    newRoundBtn.style.display = 'none';
+    roundMsg.textContent = 'Waiting for host to start next round…';
+  }
+}
+
+// ─── UI HELPERS ──────────────────────────────────────────────
+function showTrickFlash(msg) {
+  const el = document.getElementById('trickFlash');
+  el.textContent = msg;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+let notifTimer;
+function showNotif(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function setLobbyMsg(msg, isError = false) {
+  const el = document.getElementById('lobbyMsg');
+  el.textContent = msg;
+  el.className = 'msg' + (isError ? ' error' : '');
+}
+</script>
+</body>
+</html>
